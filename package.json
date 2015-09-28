@@ -1,0 +1,29 @@
+{
+  "name": "nan-check",
+  "version": "1.0.0",
+  "description": "Arguments checking for NAN module",
+  "main": "include_dirs.js",
+  "scripts": {
+    "test": "tap --gc test/js/*-test.js",
+    "rebuild-tests": "node-gyp rebuild --directory test",
+    "docs": "doc/.build.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/BloodAxe/nan-check.git"
+  },
+  "keywords": [
+    "nodejs",
+    "node",
+    "c++"
+  ],
+  "author": "ekhvedchenya@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/BloodAxe/nan-check/issues"
+  },
+  "homepage": "https://github.com/BloodAxe/nan-check#readme",
+  "dependencies": {
+    "nan": "^2.0.9"
+  }
+}
