@@ -1,15 +1,16 @@
-/**********************************************************************************
-* CloudCV Boostrap - A starter template for Node.js with OpenCV bindings.
-*                    This project lets you to quickly prototype a REST API
-*                    in a Node.js for a image processing service written in C++.
-*
-* Author: Eugene Khvedchenya <ekhvedchenya@gmail.com>
-*
-* More information:
-*  - https://cloudcv.io
-*  - http://computer-vision-talks.com
-*
-**********************************************************************************/
+/*********************************************************************
+ * NAN - Native Abstractions for Node.js
+ *
+ * Copyright (c) 2015 NAN-Check contributors:
+ *   - Ievgen Khvedchenia <https://github.com/BloodAxe>
+ *
+ * MIT License <https://github.com/BloodAxe/nan-check/blob/master/LICENSE.md>
+ *
+ * Version 0.0.1: current Node 4.0.0, Node 12: 0.12.7, Node 10: 0.10.40, iojs: 3.2.0
+ *
+ * See https://github.com/BloodAxe/nan-check for the latest update to this file
+ **********************************************************************************/
+
 #pragma once 
 
 #include <nan.h>
@@ -23,20 +24,20 @@
 namespace Nan
 {
 
-    class ArgumentMismatchException
+    class CheckException : std::runtime_error
     {
     public:
 
-        ArgumentMismatchException(const std::string& msg);
-        ArgumentMismatchException(int actual, int expected);
-        ArgumentMismatchException(int actual, const std::initializer_list<int>& expected);
+        CheckException(const std::string& msg);
+        CheckException(int actual, int expected);
+        CheckException(int actual, const std::initializer_list<int>& expected);
 
-        virtual const char * what() const
+        virtual const char * what() const override
         {
             return mMessage.c_str();
         }
 
-        virtual ~ArgumentMismatchException()
+        virtual ~CheckException()
         {
         }
 
@@ -46,31 +47,31 @@ namespace Nan
 
     typedef std::function<bool(Nan::NAN_METHOD_ARGS_TYPE args) > InitFunction;
 
-    class NanMethodArgBinding;
-    class NanCheckArguments;
+    class MethodArgBinding;
+    class CheckArguments;
 
     template <typename EnumType>
-    class NanArgStringEnum;
+    class ArgStringEnum;
 
     //////////////////////////////////////////////////////////////////////////
 
-    class NanCheckArguments
+    class CheckArguments
     {
     public:
-        NanCheckArguments(Nan::NAN_METHOD_ARGS_TYPE args);
+        CheckArguments(Nan::NAN_METHOD_ARGS_TYPE args);
 
-        NanCheckArguments& ArgumentsCount(int count);
-        NanCheckArguments& ArgumentsCount(int argsCount1, int argsCount2);
+        CheckArguments& ArgumentsCount(int count);
+        CheckArguments& ArgumentsCount(int argsCount1, int argsCount2);
 
-        NanMethodArgBinding Argument(int index);
+        MethodArgBinding Argument(int index);
 
         /**
          * Unwind all fluent calls
          */
         operator bool() const;
 
-        NanCheckArguments& AddAndClause(InitFunction rightCondition);
-        NanCheckArguments& Error(std::string * error);
+        CheckArguments& AddAndClause(InitFunction rightCondition);
+        CheckArguments& Error(std::string * error);
 
     private:
         Nan::NAN_METHOD_ARGS_TYPE m_args;
@@ -81,22 +82,22 @@ namespace Nan
     //////////////////////////////////////////////////////////////////////////
 
     template <typename EnumType>
-    class NanArgStringEnum
+    class ArgStringEnum
     {
     public:
-        explicit NanArgStringEnum(
+        explicit ArgStringEnum(
             std::initializer_list< std::pair<const char*, EnumType> > possibleValues,
-            NanMethodArgBinding& owner,
+            MethodArgBinding& owner,
             int argIndex);
 
-        NanCheckArguments& Bind(EnumType& value);
+        CheckArguments& Bind(EnumType& value);
     protected:
 
         bool TryMatchStringEnum(const std::string& key, EnumType& outValue) const;
 
     private:
         std::map<std::string, EnumType>     mPossibleValues;
-        NanMethodArgBinding&                mOwner;
+        MethodArgBinding&                mOwner;
         int                                 mArgIndex;
     };
 
@@ -105,48 +106,48 @@ namespace Nan
     /**
      * @brief This class wraps particular positional argument
      */
-    class NanMethodArgBinding
+    class MethodArgBinding
     {
     public:
 
         template <typename EnumType>
-        friend class NanArgStringEnum;
+        friend class ArgStringEnum;
 
-        NanMethodArgBinding(int index, NanCheckArguments& parent);
+        MethodArgBinding(int index, CheckArguments& parent);
 
-        NanMethodArgBinding& IsBuffer();
-        NanMethodArgBinding& IsFunction();
-        NanMethodArgBinding& IsString();
-        NanMethodArgBinding& NotNull();
-        NanMethodArgBinding& IsArray();
-        NanMethodArgBinding& IsObject();
-
-        template <typename T>
-        NanArgStringEnum<T> StringEnum(std::initializer_list< std::pair<const char*, T> > possibleValues);
+        MethodArgBinding& IsBuffer();
+        MethodArgBinding& IsFunction();
+        MethodArgBinding& IsString();
+        MethodArgBinding& NotNull();
+        MethodArgBinding& IsArray();
+        MethodArgBinding& IsObject();
 
         template <typename T>
-        NanCheckArguments& Bind(v8::Local<T>& value);
+        ArgStringEnum<T> StringEnum(std::initializer_list< std::pair<const char*, T> > possibleValues);
 
         template <typename T>
-        NanCheckArguments& Bind(T& value);
+        CheckArguments& Bind(v8::Local<T>& value);
+
+        template <typename T>
+        CheckArguments& Bind(T& value);
 
         template <typename T1, typename T2>
-        NanCheckArguments& BindAny(T1& value1, T2& value2);
+        CheckArguments& BindAny(T1& value1, T2& value2);
 
     private:
-        int                 mArgIndex;
-        NanCheckArguments&  mParent;
+        int              mArgIndex;
+        CheckArguments&  mParent;
     };
 
     //////////////////////////////////////////////////////////////////////////
 
-    NanCheckArguments NanCheck(Nan::NAN_METHOD_ARGS_TYPE args);
+    CheckArguments NanCheck(Nan::NAN_METHOD_ARGS_TYPE args);
 
     //////////////////////////////////////////////////////////////////////////
     // Template functions implementation
 
     template <typename T>
-    NanCheckArguments& NanMethodArgBinding::Bind(v8::Local<T>& value)
+    CheckArguments& MethodArgBinding::Bind(v8::Local<T>& value)
     {
         return mParent.AddAndClause([this, &value](Nan::NAN_METHOD_ARGS_TYPE args) {
             value = args[mArgIndex].As<T>();
@@ -156,7 +157,7 @@ namespace Nan
 
 
     template <typename T>
-    NanCheckArguments& NanMethodArgBinding::Bind(T& value)
+    CheckArguments& MethodArgBinding::Bind(T& value)
     {
         return mParent.AddAndClause([this, &value](Nan::NAN_METHOD_ARGS_TYPE args) {
             try
@@ -172,7 +173,7 @@ namespace Nan
     }
 
     template <typename T1, typename T2>
-    NanCheckArguments& NanMethodArgBinding::BindAny(T1& value1, T2& value2)
+    CheckArguments& MethodArgBinding::BindAny(T1& value1, T2& value2)
     {
         return mParent.AddAndClause([this, &value1, &value2](Nan::NAN_METHOD_ARGS_TYPE args) {
             value1 = To<T1>(args[mArgIndex]).FromJust();
@@ -182,17 +183,17 @@ namespace Nan
     }
 
     template <typename T>
-    NanArgStringEnum<T> NanMethodArgBinding::StringEnum(std::initializer_list< std::pair<const char*, T> > possibleValues)
+    ArgStringEnum<T> MethodArgBinding::StringEnum(std::initializer_list< std::pair<const char*, T> > possibleValues)
     {
-        return std::move(NanArgStringEnum<T>(possibleValues, IsString(), mArgIndex));
+        return std::move(ArgStringEnum<T>(possibleValues, IsString(), mArgIndex));
     }
 
     //////////////////////////////////////////////////////////////////////////
 
     template <typename T>
-    NanArgStringEnum<T>::NanArgStringEnum(
+    ArgStringEnum<T>::ArgStringEnum(
         std::initializer_list< std::pair<const char*, T> > possibleValues,
-        NanMethodArgBinding& owner, int argIndex)
+        MethodArgBinding& owner, int argIndex)
         : mPossibleValues(possibleValues.begin(), possibleValues.end())
         , mOwner(owner)
         , mArgIndex(argIndex)
@@ -200,7 +201,7 @@ namespace Nan
     }
 
     template <typename T>
-    NanCheckArguments& NanArgStringEnum<T>::Bind(T& value)
+    CheckArguments& ArgStringEnum<T>::Bind(T& value)
     {
         return mOwner.mParent.AddAndClause([this, &value](Nan::NAN_METHOD_ARGS_TYPE args) {
             std::string key = To<std::string>(args[mArgIndex]).FromJust();
@@ -209,7 +210,7 @@ namespace Nan
     }
 
     template <typename T>
-    bool NanArgStringEnum<T>::TryMatchStringEnum(const std::string& key, T& outValue) const
+    bool ArgStringEnum<T>::TryMatchStringEnum(const std::string& key, T& outValue) const
     {
         auto it = mPossibleValues.find(key);
         if (it != mPossibleValues.end())
@@ -218,62 +219,51 @@ namespace Nan
             return true;
         }
 
-        //LOG_TRACE_MESSAGE("Cannot map string value " << key << " to any known enum values");
         return false;
     }
 
 }
 
-/**********************************************************************************
-* CloudCV Boostrap - A starter template for Node.js with OpenCV bindings.
-*                    This project lets you to quickly prototype a REST API
-*                    in a Node.js for a image processing service written in C++.
-*
-* Author: Eugene Khvedchenya <ekhvedchenya@gmail.com>
-*
-* More information:
-*  - https://cloudcv.io
-*  - http://computer-vision-talks.com
-*
-**********************************************************************************/
-
 namespace Nan
 {
 
-    ArgumentMismatchException::ArgumentMismatchException(const std::string& msg)
-        : mMessage(msg)
+    CheckException::CheckException(const std::string& msg)
+        : std::runtime_error(nullptr)
+        , mMessage(msg)
     {
     }
 
-    ArgumentMismatchException::ArgumentMismatchException(int actual, int expected)
-        : mMessage("Invalid number of arguments passed to a function")
+    CheckException::CheckException(int actual, int expected)
+        : std::runtime_error(nullptr)
+        , mMessage("Invalid number of arguments passed to a function")
     {
     }
 
-    ArgumentMismatchException::ArgumentMismatchException(int actual, const std::initializer_list<int>& expected)
-        : mMessage("Invalid number of arguments passed to a function")
+    CheckException::CheckException(int actual, const std::initializer_list<int>& expected)
+        : std::runtime_error(nullptr)
+        , mMessage("Invalid number of arguments passed to a function")
     {
     }
 
     typedef std::function<bool(Nan::NAN_METHOD_ARGS_TYPE) > InitFunction;
 
-    class NanMethodArgBinding;
-    class NanCheckArguments;
+    class MethodArgBinding;
+    class CheckArguments;
 
-    NanMethodArgBinding::NanMethodArgBinding(int index, NanCheckArguments& parent)
+    MethodArgBinding::MethodArgBinding(int index, CheckArguments& parent)
         : mArgIndex(index)
         , mParent(parent)
     {
     }
 
-    NanMethodArgBinding& NanMethodArgBinding::IsBuffer()
+    MethodArgBinding& MethodArgBinding::IsBuffer()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             bool isBuf = node::Buffer::HasInstance(args[mArgIndex]);
 
             if (!isBuf)
-                throw ArgumentMismatchException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsBuffer check");
+                throw CheckException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsBuffer check");
             return true;
         };
 
@@ -281,14 +271,14 @@ namespace Nan
         return *this;
     }
 
-    NanMethodArgBinding& NanMethodArgBinding::IsFunction()
+    MethodArgBinding& MethodArgBinding::IsFunction()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             bool isFn = args[mArgIndex]->IsFunction();
 
             if (!isFn)
-                throw ArgumentMismatchException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsFunction check");
+                throw CheckException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsFunction check");
 
             return true;
         };
@@ -296,13 +286,13 @@ namespace Nan
         return *this;
     }
 
-    NanMethodArgBinding& NanMethodArgBinding::IsArray()
+    MethodArgBinding& MethodArgBinding::IsArray()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             bool isArr = args[mArgIndex]->IsArray();
             if (!isArr)
-                throw ArgumentMismatchException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsArray check");
+                throw CheckException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsArray check");
 
             return true;
         };
@@ -310,13 +300,13 @@ namespace Nan
         return *this;
     }
 
-    NanMethodArgBinding& NanMethodArgBinding::IsObject()
+    MethodArgBinding& MethodArgBinding::IsObject()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             bool isArr = args[mArgIndex]->IsObject();
             if (!isArr)
-                throw ArgumentMismatchException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsObject check");
+                throw CheckException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsObject check");
 
             return true;
         };
@@ -324,14 +314,14 @@ namespace Nan
         return *this;
     }
 
-    NanMethodArgBinding& NanMethodArgBinding::IsString()
+    MethodArgBinding& MethodArgBinding::IsString()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             bool isStr = args[mArgIndex]->IsString() || args[mArgIndex]->IsStringObject();
 
             if (!isStr)
-                throw ArgumentMismatchException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsString check");
+                throw CheckException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsString check");
 
             return true;
         };
@@ -339,13 +329,13 @@ namespace Nan
         return *this;
     }
 
-    NanMethodArgBinding& NanMethodArgBinding::NotNull()
+    MethodArgBinding& MethodArgBinding::NotNull()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             if (args[mArgIndex]->IsNull())
             {
-                throw ArgumentMismatchException(std::string("Argument ") + std::to_string(mArgIndex) + " violates NotNull check");
+                throw CheckException(std::string("Argument ") + std::to_string(mArgIndex) + " violates NotNull check");
             }
             return true;
         };
@@ -353,7 +343,7 @@ namespace Nan
         return *this;
     }
 
-    NanCheckArguments::NanCheckArguments(Nan::NAN_METHOD_ARGS_TYPE args)
+    CheckArguments::CheckArguments(Nan::NAN_METHOD_ARGS_TYPE args)
         : m_args(args)
         , m_init([](Nan::NAN_METHOD_ARGS_TYPE args) { return true; })
         , m_error(0)
@@ -361,34 +351,34 @@ namespace Nan
     }
 
 
-    NanCheckArguments& NanCheckArguments::ArgumentsCount(int count)
+    CheckArguments& CheckArguments::ArgumentsCount(int count)
     {
         return AddAndClause([count](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             if (args.Length() != count)
-                throw ArgumentMismatchException(args.Length(), count);
+                throw CheckException(args.Length(), count);
 
             return true;
         });
     }
 
-    NanCheckArguments& NanCheckArguments::ArgumentsCount(int argsCount1, int argsCount2)
+    CheckArguments& CheckArguments::ArgumentsCount(int argsCount1, int argsCount2)
     {
         return AddAndClause([argsCount1, argsCount2](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             if (args.Length() != argsCount1 || args.Length() != argsCount2)
-                throw ArgumentMismatchException(args.Length(), { argsCount1, argsCount2 });
+                throw CheckException(args.Length(), { argsCount1, argsCount2 });
 
             return true;
         });
     }
 
-    NanMethodArgBinding NanCheckArguments::Argument(int index)
+    MethodArgBinding CheckArguments::Argument(int index)
     {
-        return NanMethodArgBinding(index, *this);
+        return MethodArgBinding(index, *this);
     }
 
-    NanCheckArguments& NanCheckArguments::Error(std::string * error)
+    CheckArguments& CheckArguments::Error(std::string * error)
     {
         m_error = error;
         return *this;
@@ -397,13 +387,13 @@ namespace Nan
     /**
      * Unwind all fluent calls
      */
-    NanCheckArguments::operator bool() const
+    CheckArguments::operator bool() const
     {
         try
         {
             return m_init(m_args);
         }
-        catch (ArgumentMismatchException& exc)
+        catch (CheckException& exc)
         {
             if (m_error)
             {
@@ -421,7 +411,7 @@ namespace Nan
         }
     }
 
-    NanCheckArguments& NanCheckArguments::AddAndClause(InitFunction rightCondition)
+    CheckArguments& CheckArguments::AddAndClause(InitFunction rightCondition)
     {
         InitFunction prevInit = m_init;
         InitFunction newInit = [prevInit, rightCondition](Nan::NAN_METHOD_ARGS_TYPE args) {
@@ -431,9 +421,8 @@ namespace Nan
         return *this;
     }
 
-
-    NanCheckArguments Check(Nan::NAN_METHOD_ARGS_TYPE args)
+    CheckArguments Check(Nan::NAN_METHOD_ARGS_TYPE args)
     {
-        return std::move(NanCheckArguments(args));
+        return std::move(CheckArguments(args));
     }
 }
