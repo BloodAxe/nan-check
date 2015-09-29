@@ -20,8 +20,6 @@
 #include <array>
 #include <map>
 
-#include "framework/marshal/marshal.hpp"
-
 namespace Nan
 {
 
@@ -161,14 +159,13 @@ namespace Nan
     NanCheckArguments& NanMethodArgBinding::Bind(T& value)
     {
         return mParent.AddAndClause([this, &value](Nan::NAN_METHOD_ARGS_TYPE args) {
-            LOG_TRACE_MESSAGE("Binding argument " << mArgIndex);
-            try {
-                value = marshal<T>(args[mArgIndex]);
+            try
+            {
+                value = To<T>(args[mArgIndex]).FromJust();
                 return true;
             }
             catch (...)
             {
-                LOG_TRACE_MESSAGE("Error");
                 return false;
             }
         });
@@ -178,8 +175,8 @@ namespace Nan
     NanCheckArguments& NanMethodArgBinding::BindAny(T1& value1, T2& value2)
     {
         return mParent.AddAndClause([this, &value1, &value2](Nan::NAN_METHOD_ARGS_TYPE args) {
-            value1 = marshal<T1>(args[mArgIndex]);
-            value2 = marshal<T2>(args[mArgIndex]);
+            value1 = To<T1>(args[mArgIndex]).FromJust();
+            value2 = To<T2>(args[mArgIndex]).FromJust();
             return true;
         });
     }
@@ -206,7 +203,7 @@ namespace Nan
     NanCheckArguments& NanArgStringEnum<T>::Bind(T& value)
     {
         return mOwner.mParent.AddAndClause([this, &value](Nan::NAN_METHOD_ARGS_TYPE args) {
-            std::string key = marshal<std::string>(args[mArgIndex]);
+            std::string key = To<std::string>(args[mArgIndex]).FromJust();
             return TryMatchStringEnum(key, value);
         });
     }
@@ -246,19 +243,16 @@ namespace Nan
     ArgumentMismatchException::ArgumentMismatchException(const std::string& msg)
         : mMessage(msg)
     {
-        LOG_TRACE_MESSAGE(mMessage);
     }
 
     ArgumentMismatchException::ArgumentMismatchException(int actual, int expected)
         : mMessage("Invalid number of arguments passed to a function")
     {
-        LOG_TRACE_MESSAGE(mMessage);
     }
 
     ArgumentMismatchException::ArgumentMismatchException(int actual, const std::initializer_list<int>& expected)
         : mMessage("Invalid number of arguments passed to a function")
     {
-        LOG_TRACE_MESSAGE(mMessage);
     }
 
     typedef std::function<bool(Nan::NAN_METHOD_ARGS_TYPE) > InitFunction;
@@ -277,10 +271,9 @@ namespace Nan
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             bool isBuf = node::Buffer::HasInstance(args[mArgIndex]);
-            LOG_TRACE_MESSAGE("Checking whether argument is function:" << isBuf);
 
             if (!isBuf)
-                throw ArgumentMismatchException(std::string("Argument ") + lexical_cast(mArgIndex) + " violates IsBuffer check");
+                throw ArgumentMismatchException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsBuffer check");
             return true;
         };
 
@@ -293,10 +286,9 @@ namespace Nan
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             bool isFn = args[mArgIndex]->IsFunction();
-            LOG_TRACE_MESSAGE("Checking whether argument is function:" << isFn);
 
             if (!isFn)
-                throw ArgumentMismatchException(std::string("Argument ") + lexical_cast(mArgIndex) + " violates IsFunction check");
+                throw ArgumentMismatchException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsFunction check");
 
             return true;
         };
@@ -309,9 +301,8 @@ namespace Nan
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             bool isArr = args[mArgIndex]->IsArray();
-            LOG_TRACE_MESSAGE("Checking whether argument is array:" << isArr);
             if (!isArr)
-                throw ArgumentMismatchException(std::string("Argument ") + lexical_cast(mArgIndex) + " violates IsArray check");
+                throw ArgumentMismatchException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsArray check");
 
             return true;
         };
@@ -324,9 +315,8 @@ namespace Nan
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             bool isArr = args[mArgIndex]->IsObject();
-            LOG_TRACE_MESSAGE("Checking whether argument is object:" << isArr);
             if (!isArr)
-                throw ArgumentMismatchException(std::string("Argument ") + lexical_cast(mArgIndex) + " violates IsObject check");
+                throw ArgumentMismatchException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsObject check");
 
             return true;
         };
@@ -339,10 +329,9 @@ namespace Nan
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
             bool isStr = args[mArgIndex]->IsString() || args[mArgIndex]->IsStringObject();
-            LOG_TRACE_MESSAGE("Checking whether argument is string:" << isStr);
 
             if (!isStr)
-                throw ArgumentMismatchException(std::string("Argument ") + lexical_cast(mArgIndex) + " violates IsString check");
+                throw ArgumentMismatchException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsString check");
 
             return true;
         };
@@ -356,7 +345,7 @@ namespace Nan
         {
             if (args[mArgIndex]->IsNull())
             {
-                throw ArgumentMismatchException(std::string("Argument ") + lexical_cast(mArgIndex) + " violates NotNull check");
+                throw ArgumentMismatchException(std::string("Argument ") + std::to_string(mArgIndex) + " violates NotNull check");
             }
             return true;
         };
@@ -396,13 +385,11 @@ namespace Nan
 
     NanMethodArgBinding NanCheckArguments::Argument(int index)
     {
-        TRACE_FUNCTION;
         return NanMethodArgBinding(index, *this);
     }
 
     NanCheckArguments& NanCheckArguments::Error(std::string * error)
     {
-        TRACE_FUNCTION;
         m_error = error;
         return *this;
     }
@@ -412,14 +399,12 @@ namespace Nan
      */
     NanCheckArguments::operator bool() const
     {
-        TRACE_FUNCTION;
         try
         {
             return m_init(m_args);
         }
         catch (ArgumentMismatchException& exc)
         {
-            LOG_TRACE_MESSAGE(exc.what());
             if (m_error)
             {
                 *m_error = exc.what();
@@ -428,7 +413,6 @@ namespace Nan
         }
         catch (...)
         {
-            LOG_TRACE_MESSAGE("Caught unexpected exception");
             if (m_error)
             {
                 *m_error = "Unknown error";
