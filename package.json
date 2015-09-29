@@ -25,5 +25,13 @@
   "homepage": "https://github.com/BloodAxe/nan-check#readme",
   "dependencies": {
     "nan": "^2.0.9"
+  },
+  "devDependencies": {
+    "bindings": "~1.2.1",
+    "commander": "^2.8.1",
+    "glob": "^5.0.14",
+    "node-gyp": "~3.0.1",
+    "tap": "~0.7.1",
+    "xtend": "~4.0.0"
   }
 }
