@@ -50,7 +50,7 @@ NAN_METHOD(calibrationPatternDetect)
 <a name="usage"></a>
 ## Usage
 
-Simply add **NAN** as a dependency in the *package.json* of your Node addon:
+Simply add **NAN-Check** as a dependency in the *package.json* of your Node addon:
 
 ``` bash
 $ npm install --save nan nan-check
@@ -74,7 +74,7 @@ TODO: Write
 <a name="tests"></a>
 ### Tests
 
-To run the NAN tests do:
+To run the NAN-Check tests do:
 
 ``` sh
 npm install

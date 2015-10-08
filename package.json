@@ -1,6 +1,6 @@
 {
   "name": "nan-check",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Arguments checking for NAN module",
   "main": "include_dirs.js",
   "scripts": {
