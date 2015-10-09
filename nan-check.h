@@ -20,6 +20,13 @@
 #include <sstream>
 #include <array>
 #include <map>
+#include <stdexcept>
+
+#if _MSC_VER
+#define NANCHECK_NOTHROW _THROW0()
+#else
+#define NANCHECK_NOTHROW noexcept
+#endif
 
 namespace Nan
 {
@@ -32,7 +39,7 @@ namespace Nan
         CheckException(int actual, int expected);
         CheckException(int actual, const std::initializer_list<int>& expected);
 
-        virtual const char * what() const override
+        virtual const char * what() const NANCHECK_NOTHROW override
         {
             return mMessage.c_str();
         }
