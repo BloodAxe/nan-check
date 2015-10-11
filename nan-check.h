@@ -102,7 +102,7 @@ namespace Nan
 
     private:
         std::map<std::string, EnumType>     mPossibleValues;
-        MethodArgBinding&                mOwner;
+        MethodArgBinding&                   mOwner;
         int                                 mArgIndex;
     };
 
@@ -205,7 +205,7 @@ namespace Nan
     inline CheckArguments& ArgStringEnum<T>::Bind(T& value)
     {
         return mOwner.mParent.AddAndClause([this, &value](Nan::NAN_METHOD_ARGS_TYPE args) {
-            std::string key = To<std::string>(args[mArgIndex]).FromJust();
+            std::string key = Marshal<std::string>(args[mArgIndex]);
             return TryMatchStringEnum(key, value);
         });
     }
