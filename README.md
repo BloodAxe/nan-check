@@ -1,6 +1,8 @@
 Arguments checking in native modules for Node.js
 ===============================
 
+[![Build Status](https://travis-ci.org/BloodAxe/nan-check.png?branch=master)](https://travis-ci.org/BloodAxe/nan-check)
+
 This project contains some helper utilities that make native addon development a bit more easier.
 
  * **[Example](#example)**
