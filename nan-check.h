@@ -14,6 +14,7 @@
 #pragma once 
 
 #include <nan.h>
+#include <nan-marshal.h>
 #include <node_buffer.h>
 #include <functional>
 #include <iostream>
@@ -44,10 +45,7 @@ namespace Nan
             return mMessage.c_str();
         }
 
-        virtual ~CheckException()
-        {
-        }
-
+        virtual ~CheckException() = default;
     private:
         std::string mMessage;
     };
@@ -147,14 +145,10 @@ namespace Nan
     };
 
     //////////////////////////////////////////////////////////////////////////
-
-    CheckArguments NanCheck(Nan::NAN_METHOD_ARGS_TYPE args);
-
-    //////////////////////////////////////////////////////////////////////////
     // Template functions implementation
 
     template <typename T>
-    CheckArguments& MethodArgBinding::Bind(v8::Local<T>& value)
+    inline CheckArguments& MethodArgBinding::Bind(v8::Local<T>& value)
     {
         return mParent.AddAndClause([this, &value](Nan::NAN_METHOD_ARGS_TYPE args) {
             value = args[mArgIndex].As<T>();
@@ -164,12 +158,12 @@ namespace Nan
 
 
     template <typename T>
-    CheckArguments& MethodArgBinding::Bind(T& value)
+    inline CheckArguments& MethodArgBinding::Bind(T& value)
     {
         return mParent.AddAndClause([this, &value](Nan::NAN_METHOD_ARGS_TYPE args) {
             try
             {
-                value = To<T>(args[mArgIndex]).FromJust();
+                value = Nan::Marshal<T>(args[mArgIndex]);
                 return true;
             }
             catch (...)
@@ -180,17 +174,17 @@ namespace Nan
     }
 
     template <typename T1, typename T2>
-    CheckArguments& MethodArgBinding::BindAny(T1& value1, T2& value2)
+    inline CheckArguments& MethodArgBinding::BindAny(T1& value1, T2& value2)
     {
         return mParent.AddAndClause([this, &value1, &value2](Nan::NAN_METHOD_ARGS_TYPE args) {
-            value1 = To<T1>(args[mArgIndex]).FromJust();
-            value2 = To<T2>(args[mArgIndex]).FromJust();
+            value1 = Nan::Marshal<T1>(args[mArgIndex]);
+            value2 = Nan::Marshal<T2>(args[mArgIndex]);
             return true;
         });
     }
 
     template <typename T>
-    ArgStringEnum<T> MethodArgBinding::StringEnum(std::initializer_list< std::pair<const char*, T> > possibleValues)
+    inline ArgStringEnum<T> MethodArgBinding::StringEnum(std::initializer_list< std::pair<const char*, T> > possibleValues)
     {
         return std::move(ArgStringEnum<T>(possibleValues, IsString(), mArgIndex));
     }
@@ -198,7 +192,7 @@ namespace Nan
     //////////////////////////////////////////////////////////////////////////
 
     template <typename T>
-    ArgStringEnum<T>::ArgStringEnum(
+    inline ArgStringEnum<T>::ArgStringEnum(
         std::initializer_list< std::pair<const char*, T> > possibleValues,
         MethodArgBinding& owner, int argIndex)
         : mPossibleValues(possibleValues.begin(), possibleValues.end())
@@ -208,7 +202,7 @@ namespace Nan
     }
 
     template <typename T>
-    CheckArguments& ArgStringEnum<T>::Bind(T& value)
+    inline CheckArguments& ArgStringEnum<T>::Bind(T& value)
     {
         return mOwner.mParent.AddAndClause([this, &value](Nan::NAN_METHOD_ARGS_TYPE args) {
             std::string key = To<std::string>(args[mArgIndex]).FromJust();
@@ -217,7 +211,7 @@ namespace Nan
     }
 
     template <typename T>
-    bool ArgStringEnum<T>::TryMatchStringEnum(const std::string& key, T& outValue) const
+    inline bool ArgStringEnum<T>::TryMatchStringEnum(const std::string& key, T& outValue) const
     {
         auto it = mPossibleValues.find(key);
         if (it != mPossibleValues.end())
@@ -234,19 +228,19 @@ namespace Nan
 namespace Nan
 {
 
-    CheckException::CheckException(const std::string& msg)
+    inline CheckException::CheckException(const std::string& msg)
         : std::runtime_error(nullptr)
         , mMessage(msg)
     {
     }
 
-    CheckException::CheckException(int actual, int expected)
+    inline CheckException::CheckException(int actual, int expected)
         : std::runtime_error(nullptr)
         , mMessage("Invalid number of arguments passed to a function")
     {
     }
 
-    CheckException::CheckException(int actual, const std::initializer_list<int>& expected)
+    inline CheckException::CheckException(int actual, const std::initializer_list<int>& expected)
         : std::runtime_error(nullptr)
         , mMessage("Invalid number of arguments passed to a function")
     {
@@ -257,13 +251,13 @@ namespace Nan
     class MethodArgBinding;
     class CheckArguments;
 
-    MethodArgBinding::MethodArgBinding(int index, CheckArguments& parent)
+    inline MethodArgBinding::MethodArgBinding(int index, CheckArguments& parent)
         : mArgIndex(index)
         , mParent(parent)
     {
     }
 
-    MethodArgBinding& MethodArgBinding::IsBuffer()
+    inline MethodArgBinding& MethodArgBinding::IsBuffer()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
@@ -278,7 +272,7 @@ namespace Nan
         return *this;
     }
 
-    MethodArgBinding& MethodArgBinding::IsFunction()
+    inline MethodArgBinding& MethodArgBinding::IsFunction()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
@@ -293,7 +287,7 @@ namespace Nan
         return *this;
     }
 
-    MethodArgBinding& MethodArgBinding::IsArray()
+    inline MethodArgBinding& MethodArgBinding::IsArray()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
@@ -307,7 +301,7 @@ namespace Nan
         return *this;
     }
 
-    MethodArgBinding& MethodArgBinding::IsObject()
+    inline MethodArgBinding& MethodArgBinding::IsObject()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
@@ -321,7 +315,7 @@ namespace Nan
         return *this;
     }
 
-    MethodArgBinding& MethodArgBinding::IsString()
+    inline MethodArgBinding& MethodArgBinding::IsString()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
@@ -336,7 +330,7 @@ namespace Nan
         return *this;
     }
 
-    MethodArgBinding& MethodArgBinding::NotNull()
+    inline MethodArgBinding& MethodArgBinding::NotNull()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
         {
@@ -350,7 +344,7 @@ namespace Nan
         return *this;
     }
 
-    CheckArguments::CheckArguments(Nan::NAN_METHOD_ARGS_TYPE args)
+    inline CheckArguments::CheckArguments(Nan::NAN_METHOD_ARGS_TYPE args)
         : m_args(args)
         , m_init([](Nan::NAN_METHOD_ARGS_TYPE args) { return true; })
         , m_error(0)
@@ -358,7 +352,7 @@ namespace Nan
     }
 
 
-    CheckArguments& CheckArguments::ArgumentsCount(int count)
+    inline CheckArguments& CheckArguments::ArgumentsCount(int count)
     {
         return AddAndClause([count](Nan::NAN_METHOD_ARGS_TYPE args)
         {
@@ -369,7 +363,7 @@ namespace Nan
         });
     }
 
-    CheckArguments& CheckArguments::ArgumentsCount(int argsCount1, int argsCount2)
+    inline CheckArguments& CheckArguments::ArgumentsCount(int argsCount1, int argsCount2)
     {
         return AddAndClause([argsCount1, argsCount2](Nan::NAN_METHOD_ARGS_TYPE args)
         {
@@ -380,12 +374,12 @@ namespace Nan
         });
     }
 
-    MethodArgBinding CheckArguments::Argument(int index)
+    inline MethodArgBinding CheckArguments::Argument(int index)
     {
         return MethodArgBinding(index, *this);
     }
 
-    CheckArguments& CheckArguments::Error(std::string * error)
+    inline CheckArguments& CheckArguments::Error(std::string * error)
     {
         m_error = error;
         return *this;
@@ -394,7 +388,7 @@ namespace Nan
     /**
      * Unwind all fluent calls
      */
-    CheckArguments::operator bool() const
+    inline CheckArguments::operator bool() const
     {
         try
         {
@@ -418,7 +412,7 @@ namespace Nan
         }
     }
 
-    CheckArguments& CheckArguments::AddAndClause(InitFunction rightCondition)
+    inline CheckArguments& CheckArguments::AddAndClause(InitFunction rightCondition)
     {
         InitFunction prevInit = m_init;
         InitFunction newInit = [prevInit, rightCondition](Nan::NAN_METHOD_ARGS_TYPE args) {
@@ -428,7 +422,7 @@ namespace Nan
         return *this;
     }
 
-    CheckArguments Check(Nan::NAN_METHOD_ARGS_TYPE args)
+    inline CheckArguments Check(Nan::NAN_METHOD_ARGS_TYPE args)
     {
         return std::move(CheckArguments(args));
     }
