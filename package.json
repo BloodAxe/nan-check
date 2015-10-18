@@ -25,7 +25,7 @@
   "homepage": "https://github.com/BloodAxe/nan-check#readme",
   "dependencies": {
     "nan": "^2.0.9",
-    "nan-marshal": "0.0.4"
+    "nan-marshal": "0.0.5"
   },
   "devDependencies": {
     "bindings": "~1.2.1",
