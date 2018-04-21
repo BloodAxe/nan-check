@@ -126,6 +126,7 @@ namespace Nan
         MethodArgBinding& NotNull();
         MethodArgBinding& IsArray();
         MethodArgBinding& IsObject();
+        MethodArgBinding& IsNumber();
 
         template <typename T>
         ArgStringEnum<T> StringEnum(std::initializer_list< std::pair<const char*, T> > possibleValues);
@@ -323,6 +324,21 @@ namespace Nan
 
             if (!isStr)
                 throw CheckException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsString check");
+
+            return true;
+        };
+        mParent.AddAndClause(bind);
+        return *this;
+    }
+
+    inline MethodArgBinding& MethodArgBinding::IsNumber()
+    {
+        auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
+        {
+            bool isNumber = args[mArgIndex]->IsNumber();
+
+            if (!isNumber)
+                throw CheckException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsNumber check");
 
             return true;
         };
