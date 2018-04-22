@@ -15,7 +15,7 @@ const test = require("tap").test,
 
 test("isnumber-test", function(t) {
   const errorMessage = "Argument 0 violates IsNumber check";
-  let expectedError = new TypeError(errorMessage);
+  const expectedError = new TypeError(errorMessage);
   t.ok(5 === bindings.TestNumericParameter(5), "returns expected value");
   t.throws(
     function() {
