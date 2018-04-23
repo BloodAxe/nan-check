@@ -419,6 +419,7 @@ namespace Nan
             }
             return false;
         }
+        // FIXME: Overbroad catch clause?
         // catch (...)
         // {
         //     if (m_error)
