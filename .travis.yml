@@ -11,11 +11,7 @@ addons:
     - g++-4.9
 env:
   matrix:
-  - TRAVIS_NODE_VERSION="0.8"
-  - TRAVIS_NODE_VERSION="0.10"
-  - TRAVIS_NODE_VERSION="0.12"
-  - TRAVIS_NODE_VERSION="iojs-3"
-  - TRAVIS_NODE_VERSION="4"
+   - TRAVIS_NODE_VERSION="8"
 notifications:
   email:
     - ekhvedchenya@gmail.com
