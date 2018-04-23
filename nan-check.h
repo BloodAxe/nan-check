@@ -126,6 +126,7 @@ namespace Nan
         MethodArgBinding& NotNull();
         MethodArgBinding& IsArray();
         MethodArgBinding& IsObject();
+        MethodArgBinding& IsNumber();
 
         template <typename T>
         ArgStringEnum<T> StringEnum(std::initializer_list< std::pair<const char*, T> > possibleValues);
@@ -229,19 +230,19 @@ namespace Nan
 {
 
     inline CheckException::CheckException(const std::string& msg)
-        : std::runtime_error(nullptr)
+        : std::runtime_error(msg)
         , mMessage(msg)
     {
     }
 
     inline CheckException::CheckException(int actual, int expected)
-        : std::runtime_error(nullptr)
+        : std::runtime_error("Invalid number of arguments passed to a function")
         , mMessage("Invalid number of arguments passed to a function")
     {
     }
 
     inline CheckException::CheckException(int actual, const std::initializer_list<int>& expected)
-        : std::runtime_error(nullptr)
+        : std::runtime_error("Invalid number of arguments passed to a function")
         , mMessage("Invalid number of arguments passed to a function")
     {
     }
@@ -330,6 +331,22 @@ namespace Nan
         return *this;
     }
 
+    inline MethodArgBinding& MethodArgBinding::IsNumber()
+    {
+        auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
+        {
+            bool isNumber = args[mArgIndex]->IsNumber();
+
+            if (!isNumber)
+                throw CheckException(std::string("Argument ") + std::to_string(mArgIndex) + " violates IsNumber check");
+
+            return true;
+        };
+        mParent.AddAndClause(bind);
+        return *this;
+    }
+
+
     inline MethodArgBinding& MethodArgBinding::NotNull()
     {
         auto bind = [this](Nan::NAN_METHOD_ARGS_TYPE args)
@@ -402,14 +419,15 @@ namespace Nan
             }
             return false;
         }
-        catch (...)
-        {
-            if (m_error)
-            {
-                *m_error = "Unknown error";
-            }
-            return false;
-        }
+        // FIXME: Overbroad catch clause?
+        // catch (...)
+        // {
+        //     if (m_error)
+        //     {
+        //         *m_error = "Unknown error";
+        //     }
+        //     return false;
+        // }
     }
 
     inline CheckArguments& CheckArguments::AddAndClause(InitFunction rightCondition)
